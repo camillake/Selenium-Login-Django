@@ -1,59 +1,48 @@
 from django.shortcuts import render
 from django.shortcuts import redirect
-from django.http import HttpResponse
-from django.views.generic import DetailView, ListView, TemplateView
-from .test_function import load_test
+from django.views.generic.detail import DetailView
 from .models import LogModel
 import logging
+from .test_function import load_test
 logger = logging.getLogger(__name__)
 
-
-
-# Create your views here.
-'''
- browser_type = models.ForeignKey(BrowserModel)
-    started_time = models.CharField(max_length=30)
-    elapsed_time = models.CharField(max_length=10)
-    total_run_num = models.PositiveIntegerField()
-    pass_case_num = models.PositiveIntegerField()
-    failed_case_num = models.PositiveIntegerField()
-    detail_log = models.TextField(blank=True)
-
-'''
-
 def save_test_to_model(log):
-   # browser = BrowserModel(log['browser'])
-   # print (BrowserModel.objects.all())
 
+    browser = log.get('browser', 'Default')
+    start = log.get('start')
+    elapsed = log.get('elapsed', 0)
+    total = log.get('total', 0)
+    success = log.get('pass', 0)
+    failed = log.get('failure',0)
+    detail = log.get('detail', 'No more data')
     if log:
         LogModel.objects.create(
-            browser_type=log['browser'],
-            started_time=log['start'], elapsed_time=log['elapsed'],
-            total_run_num=log['total'], pass_case_num=log['pass'], failed_case_num=log['failure'],
-            detail_log =log['log']
+            browser_type=browser,
+            started_time=start, elapsed_time=elapsed,
+            total_run_num=total, pass_case_num=success, failed_case_num=failed,
+            detail_log=detail
         ).save()
 
 def activate_test(request):
-    print('activate_test')
 
-
-    logger.error(request.POST)
+    logger.debug('activate_test-request is %s' % request.POST)
 
     if '_run' in request.POST:
-        result = ''
         test_type = request.POST['browsertype']
-        logger.error(test_type)
         result = load_test(test_type)
-        result['browser'] = test_type
-        #logger.error(result)
 
-        save_test_to_model(result)
+        logger.debug("test report is %s" % result)
 
+        if len(result) > 0:
+            result['browser'] = test_type
+
+            save_test_to_model(result)
 
     queryset = LogModel.objects.all()
 
     context_object_name = 'loglist'
     template_name = 'homepage.html'
+
     if request.method == 'POST':
         return redirect('homepage')
     else:
@@ -62,7 +51,13 @@ def activate_test(request):
                       )
 
 
+class DetailLog(DetailView):
+    template_name = 'logdetail.html'
+    model = LogModel
 
+    def get_context_data(self, **kwargs):
+        context = super(DetailLog, self).get_context_data(**kwargs)
+        return context
 
 
 
