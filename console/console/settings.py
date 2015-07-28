@@ -73,15 +73,10 @@ TEMPLATE_DIRS = (
 WEB_DRIVER_DIRS = (
     os.path.join(BASE_DIR, 'webdriver', 'chromedriver').replace('\\', '/'),
     os.path.join(BASE_DIR, 'webdriver', 'iedriver').replace('\\', '/'),
-    os.path.join(BASE_DIR, 'webdriver', 'firefoxdriver').replace('\\', '/'),
+    os.path.join(BASE_DIR, 'webdriver', 'SafariDriver').replace('\\', '/'),
 
 )
-#XML_OUTPUT
 
-TEST_REPORT = (
-      os.path.join(BASE_DIR, 'xmlreport').replace('\\', '/'),
-
-)
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
 
@@ -101,3 +96,31 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Add custom logging
+MY_DJANGO_LOG_LEVEL = 'DEBUG'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        #custom my loggers with app module name
+        'test_login': {
+            'handlers': ['console'],
+            'level': MY_DJANGO_LOG_LEVEL
+        }
+
+    },
+}
