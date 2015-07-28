@@ -4,3 +4,5 @@ __pycache__
 staticfiles
 db.sqlite3
 *.DS_Store
+personal.py
+*.idea/
