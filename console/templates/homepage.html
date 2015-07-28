@@ -3,31 +3,31 @@
 <html>
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Testing Web Player</title>
+    <title>Testing</title>
      <style type="text/css">
-        table {
-        border:0;
-        border-collpase:collpase;
-        }
-
-        tr {
-          border-bottom:1px solid #000;
-            border-left:1px solid #000;
-        }
 
          td{
+
              margin: 2px 2px 2px 2px;
              padding:  4px 4px 4px 4px;
          }
+
+
+    table, td, th {
+         border-collpase:collpase;
+        border: 1px solid gray;
+    }
+
      </style>
 </head>
 
-
+<body>
+    {% load tz %}
     <form  action="." method="post"> {% csrf_token%}
         <select name="browsertype">
           <option value="Chrome">Chrome</option>
           <option value="Ie">IE</option>
-          <option value="Firefox">Firefox</option>
+          <option value="Safari">Safari</option>
         </select>
         <input type="submit" name="_run" value="Run"/>
 
@@ -37,6 +37,10 @@
     </p>
 
 <table>
+    <!--
+    {% get_current_timezone as TIME_ZONE %}
+    current timezone: {{TIME_ZONE}}
+    -->
   <tr><td>Browser</td><td>Total </td> <td>Pass</td> <td>Fail</td> <td>start</td> <td>elpased</td><td>Detail</td><tr>
     {% for item in loglist %}
         <tr>
@@ -44,9 +48,10 @@
          <td>  {{item.total_run_num}}</td>
          <td> {{item.pass_case_num}}</td>
         <td>{{item.failed_case_num}}</td>
-        <td>{{item.started_time}} UTC +8</td>
+        <td> {{item.started_time|timezone:"Asia/Hong_Kong"}}</td>
         <td>{{item.elapsed_time|floatformat:3}}s</td>
-        <td>{{ item.detail_log }}</td>
+
+        <td> <a href="{% url 'log-detail' pk=item.id %}"/>More</td>
         </tr>
     {% empty %}
         <B>No data now</B>
