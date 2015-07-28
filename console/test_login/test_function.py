@@ -26,6 +26,12 @@ DRIVER_DIRS = {'Chrome': settings.WEB_DRIVER_DIRS[0],
                }
 
 
+TEST_ID = settings.TEST_ID
+TEST_PWD = settings.TEST_PWD
+FB_TEST_ID = settings.FB_TEST_ID
+FB_PWD = settings.FB_PWD
+
+
 class Test_Login(unittest.TestCase):
 
     def setUp(self):
