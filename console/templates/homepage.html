@@ -26,8 +26,8 @@
     <form  action="." method="post"> {% csrf_token%}
         <select name="browsertype">
           <option value="Chrome">Chrome</option>
-          <option value="Ie">IE</option>
-          <option value="Safari">Safari</option>
+          <option value="Ie" disabled="disabled">IE</option>
+          <option value="Safari" disabled="disabled">Safari</option>
         </select>
         <input type="submit" name="_run" value="Run"/>
 

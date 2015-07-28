@@ -26,6 +26,7 @@ DRIVER_DIRS = {'Chrome': settings.WEB_DRIVER_DIRS[0],
                'Safari': settings.WEB_DRIVER_DIRS[2],
                }
 
+
 class Test_Login(unittest.TestCase):
 
     def setUp(self):
@@ -34,16 +35,7 @@ class Test_Login(unittest.TestCase):
         driver_dir = DRIVER_DIRS[browser]
 
         self.target_url = TARGET_URL
-
-        if browser == 'Chrome':
-            self.driver = webdriver.Chrome(driver_dir)
-        elif browser == 'Ie':
-            self.driver = webdriver.Ie(driver_dir)
-        elif browser == 'Safari':
-            self.driver = webdriver.Safari()
-        else:
-            logger.debug('Browser Not Matched')
-            self.driver.quit()
+        self.driver = webdriver.Chrome(driver_dir)
 
         try:
             self.driver.get(self.target_url)
@@ -213,26 +205,6 @@ class Test_Login(unittest.TestCase):
 
 # error msg :Permission denied to access property "_isWrap" self.log_out()
 
-class Test_Login_Safari(Test_Login):
-
-    def setUp(self):
-        self.target_url = TARGET_URL
-
-        self.driver_dir = DRIVER_DIRS['Safari']
-        self.driver = webdriver.Safari()
-
-        self.driver.get(self.target_url)
-
-
-class Test_Login_Ie(Test_Login):
-
-    def setUp(self):
-        self.target_url = TARGET_URL
-
-        self.driver = webdriver.Ie()
-
-        if self.driver:
-            self.driver.get(self.target_url)
 
 def handle_result(testresult, detail):
 
@@ -277,12 +249,7 @@ def handle_result(testresult, detail):
 def load_test(browser):
     # pack test suite
 
-    if browser == 'Chrome':
-        suite = unittest.TestLoader().loadTestsFromTestCase(Test_Login)
-    elif browser == 'Safari':
-        suite = unittest.TestLoader().loadTestsFromTestCase(Test_Login_Safari)
-    elif browser == 'Ie':
-        suite = unittest.TestLoader().loadTestsFromTestCase(Test_Login_Ie)
+    suite = unittest.TestLoader().loadTestsFromTestCase(Test_Login)
 
     # output stream collector
     outputio = io.StringIO()
