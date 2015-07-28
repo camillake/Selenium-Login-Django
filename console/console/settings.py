@@ -124,3 +124,8 @@ LOGGING = {
 
     },
 }
+
+TEST_ID = ''
+TEST_PWD = ''
+FB_TEST_ID = ''
+FB_PWD = ''

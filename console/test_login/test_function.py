@@ -13,7 +13,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, ElementNotVisibleException, NoSuchElementException
 from selenium.common.exceptions import ErrorInResponseException, WebDriverException
-from .personal import *
 
 # you need to download chromdriver and put it under specified directory
 
