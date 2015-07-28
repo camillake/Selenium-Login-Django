@@ -1,148 +1,190 @@
 __author__ = 'Camilla'
 
+import unittest
+import io
 import time
+import re
 import logging
+from django.utils import timezone
 from django.conf import settings
-import unittest, xmlrunner
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, ElementNotVisibleException, NoSuchElementException
+from selenium.common.exceptions import ErrorInResponseException, WebDriverException
+from .personal import *
 
-#you need to download chromdriver
+# you need to download chromdriver and put it under specified directory
 
 logger = logging.getLogger(__name__)
 
 TARGET_URL = 'https://www.kkbox.com/play/'
 
-DRIVER_DIRS = {'chrome': settings.WEB_DRIVER_DIRS[0],
-               'ie': settings.WEB_DRIVER_DIRS[1],
-               'firefox': settings.WEB_DRIVER_DIRS[2],
+DRIVER_DIRS = {'Chrome': settings.WEB_DRIVER_DIRS[0],
+               'Ie': settings.WEB_DRIVER_DIRS[1],
+               'Safari': settings.WEB_DRIVER_DIRS[2],
                }
-
-FB_TEST_ID = ''
-FB_PWD = ''
-TEST_ID = ''
-TEST_PWD = ''
-
-
 
 class Test_Login(unittest.TestCase):
 
     def setUp(self):
-        self.browser = 'chrome'
 
-        driver_dir = DRIVER_DIRS[self.browser]
+        browser = 'Chrome'
+        driver_dir = DRIVER_DIRS[browser]
+
         self.target_url = TARGET_URL
-        if self.browser == 'chrome':
-            self.driver = webdriver.Chrome(driver_dir)
-        elif self.browser == 'ie':
-            self.driver = webdriver.Ie(driver_dir)
-        elif self.browser == 'firefox':
-            self.driver = webdriver.Firefox()
 
-        if self.driver:
+        if browser == 'Chrome':
+            self.driver = webdriver.Chrome(driver_dir)
+        elif browser == 'Ie':
+            self.driver = webdriver.Ie(driver_dir)
+        elif browser == 'Safari':
+            self.driver = webdriver.Safari()
+        else:
+            logger.debug('Browser Not Matched')
+            self.driver.quit()
+
+        try:
             self.driver.get(self.target_url)
             self.driver.maximize_window()
+        except (ErrorInResponseException, WebDriverException)as ec:
+            logger.exception(ec)
 
     def tearDown(self):
+        logger.debug('teardown')
         self.driver.quit()
 
     def log_out(self):
 
+        if settings.DEBUG:
+            time.sleep(2)
+
         driver = self.driver
-        #check the disabled menu is disaplayed
+        # check the disabled menu is disaplayed
         if not (driver.find_element_by_css_selector("li.disabled").is_displayed()):
-            logger.error("not displayed")
+            logger.debug("drop-down menu not displayed")
             driver.find_element_by_css_selector("i.icon.icon-user-dropdown").click()
         else:
-            logger.error('show')
-            #press logout button
+            logger.debug('drop-down menu displayed')
+            # press logout button
             driver.find_element_by_xpath("//li[5]/a").click()
+            logger.debug('press Logout')
 
+    def close_pop(self):
+        driver = self.driver
+        try:
+            driver.implicitly_wait(5)
+            close_element = driver.find_element_by_xpath("//div[@class='close ng-scope']/img")
+        except (NoSuchElementException, ElementNotVisibleException) as ec:
+            logger.exception(ec)
+            logger.debug('Pop up window not displayed')
+            return
+        except TimeoutException as ec:
+            logger.exception(ec)
+            return
 
-    def check_id(self, UID):
+        logger.debug('Pop-up window closed')
+        close_element.click()
+
+    def check_id(self, uid):
         driver = self.driver
 
+        # close pop window if there is
         self.close_pop()
 
+        '''
+        if settings.DEBUG:
+            time.sleep(2)
+        '''
         try:
             WebDriverWait(driver, 5).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "i.icon.icon-user-dropdown")
             ))
-        except TimeoutException:
+        except TimeoutException as ec:
+            logger.exception(ec)
             driver.quit()
 
+        logger.debug("Window title:%s" % driver.title)
+
         driver.find_element_by_css_selector("i.icon.icon-user-dropdown").click()
-        self.info = driver.find_element_by_css_selector("a.ng-binding").text.split()
-        self.string_info = self.info[0]
+        info = driver.find_element_by_css_selector("a.ng-binding").text.split()
+        string_info = info[0]
 
-        #make sure TEST_ID is same as id on the use-info-area
-        self.assertIn(UID, self.string_info)
-        print (self.info)
+        # make sure TEST_ID is same as id on the use-info-area
+        logger.debug("user account: %s" % string_info)
 
+        self.assertIn(uid, string_info)
 
-
-    #@unittest.skip('basic_login skiped')
+    # @unittest.skip('temporarily')
     def test_basic_login(self):
 
         driver = self.driver
-
         try:
-             WebDriverWait(driver, 5).until(
+             WebDriverWait(driver,0).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "input[ng-model='loginObj.uid']")
             ))
-
-        except TimeoutException:
-
+        except TimeoutException as ec:
+            logger.exception(ec)
             driver.quit()
 
-        self.id_box = driver.find_element_by_css_selector("input[ng-model='loginObj.uid']")
-        self.id_box.send_keys(TEST_ID)
+        id_box = driver.find_element_by_css_selector("input[ng-model='loginObj.uid']")
+        id_box.clear()
+        id_box.send_keys(TEST_ID)
 
-        self.pwd_box = driver.find_element_by_css_selector("input[ng-model='loginObj.pwd']")
-        self.pwd_box.send_keys(TEST_PWD)
+        pwd_box = driver.find_element_by_css_selector("input[ng-model='loginObj.pwd']")
+        pwd_box.clear()
+        pwd_box.send_keys(TEST_PWD)
 
-        self.click_btn = driver.find_element_by_class_name('btn-confirm')
-        self.click_btn.click()
+        click_btn = driver.find_element_by_class_name('btn-confirm')
+        click_btn.click()
         self.check_id(TEST_ID)
 
-        time.sleep(2)
+        self.log_out()
 
+    # @unittest.skip('FB')
     def test_fb_test(self):
 
         driver = self.driver
 
         try:
-            WebDriverWait(driver, 5).until(
+            WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "button.btn-invite")
                                                ))
-        except TimeoutException:
+        except TimeoutException as ec:
+            logger.exception(ec)
             driver.quit()
+        # Get current window handler
+        kkbox_wnd = driver.current_window_handle
 
-        self.kkbox_wnd = driver.current_window_handle
         driver.find_element_by_css_selector('button.btn-invite').click()
 
-        #switch window to facebook login popup window
+        # Select a frame by its (zero-based) index.
+        # switch window to popup window of FaceBook
         wnd_num = len(driver.window_handles)
 
         if wnd_num > 1:
             driver.switch_to.window(driver.window_handles[wnd_num-1])
-            logger.error(driver.title)
+            logger.debug("Window title:%s" % driver.title)
+        else:
+            logger.error('Cant get Facebook Login wnd')
+            driver.quit()
 
         try:
             WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.ID, "pass")
                                                ))
-        except TimeoutException:
+        except (TimeoutException, NoSuchElementException) as ec:
+            logger.exception(ec)
             driver.quit()
 
+        account_box = driver.find_element_by_id('email')
+        account_box.clear()
+        account_box.send_keys(FB_TEST_ID)
 
-        driver.find_element_by_id('email').clear()
-
-        driver.find_element_by_id('email').send_keys(FB_TEST_ID)
-        driver.find_element_by_id('pass').send_keys(FB_PWD)
+        pwd_box = driver.find_element_by_id('pass')
+        pwd_box.clear()
+        pwd_box.send_keys(FB_PWD)
 
         driver.find_element_by_id('u_0_2').click()
 
@@ -153,34 +195,37 @@ class Test_Login(unittest.TestCase):
         except TimeoutException:
             driver.quit()
 
-        logger.error('find skip')
+        logger.debug('find skip btn')
         driver.find_element_by_name('__SKIP__').click()
 
-        driver.switch_to.window(self.kkbox_wnd)
-        logger.error(driver.title)
+        driver.switch_to.window(kkbox_wnd)
 
         self.check_id(FB_TEST_ID)
+
         self.log_out()
 
-class Test_Login_Firefox(Test_Login):
+    @unittest.skip('elapsed time confirmation purpose')
+    def test_sleep(self):
+
+        #self.assertIn('3','bbb')
+        self.assertEqual(0, 2/0)
+        time.sleep(2)
+
+# error msg :Permission denied to access property "_isWrap" self.log_out()
+
+class Test_Login_Safari(Test_Login):
+
     def setUp(self):
         self.target_url = TARGET_URL
 
-        self.driver = webdriver.Firefox()
+        self.driver_dir = DRIVER_DIRS['Safari']
+        self.driver = webdriver.Safari()
 
-        if self.driver:
-            self.driver.get(self.target_url)
+        self.driver.get(self.target_url)
 
-    def tearDown(self):
-        super(Test_Login_Firefox, self).tearDown()
-
-
-    def test_basic_login(self):
-        super(Test_Login_Firefox, self).test_basic_login()
-
-    # permission  problem" compatibility
 
 class Test_Login_Ie(Test_Login):
+
     def setUp(self):
         self.target_url = TARGET_URL
 
@@ -189,73 +234,67 @@ class Test_Login_Ie(Test_Login):
         if self.driver:
             self.driver.get(self.target_url)
 
+def handle_result(testresult, detail):
 
-    def tearDown(self):
-        super(Test_Login_Ie,self).tearDown()
-    def test_basic_login(self):
-        super(Test_Login_Ie,self).test_basic_login
-    def test_fb_test(self):
-        super(Test_Login_Ie, self).test_fb_test()
+    failure_cnt = len(testresult.failures)
+    errors_count = {}
+    for error in testresult.errors:
+        errors_count[error[0]] = errors_count.get(error[0], 0)+1
 
+    logger.debug("Error total is : %d\n" % len(errors_count))
 
-def load_test(browser):
-    #pack test suite
+    failures = failure_cnt + len(errors_count)
+    total = testresult.testsRun
+    passrun = total - failures
 
-    if browser== 'Chrome':
-    #result = unittest.TestResult()
-        suite = unittest.TestLoader().loadTestsFromTestCase(Test_Login)
-    elif browser == 'Firefox' :
-        suite = unittest.TestLoader().loadTestsFromTestCase(Test_Login_Firefox)
-    elif browser == 'Ie':
-         suite = unittest.TestLoader().loadTestsFromTestCase(Test_Login_Ie)
-
-
-
-    #xmlrunner.XMLTestRunner(output='test.xml').run(suite)
-
-    #suite.run()
-
-    outdir = settings.TEST_REPORT
-
-    result = xmlrunner.XMLTestRunner(
-        output='xmlreport', verbosity=2,).run(suite)
-
-    logger.error('********')
-    print (result._stdout_data)
-
-    print (result._stderr_data)
-    print (result._report_testsuite)
-    #logger.error( result.successes, result.failures, result.start_time)
-
-    for s_item in result.successes:
-        logger.error (s_item.get_description())
-
-    logger.error("Passed time %s" %(result.elapsed_times))
-    logger.error('********')
+    # fill in test result
 
     report = {}
 
-    start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(result.start_time))
-    #calculate elapsed
-    elapesed_time = result.stop_time - result.start_time
+    # use regular expression to retrive elpased time
 
-    logger.error("%s %s "%(start_time, elapesed_time))
+    stringlines = detail.strip().splitlines()
 
+    logger.debug("\n****test report :\n%s\n********\n", stringlines)
 
-    report['start'] = start_time
-    report['elapsed'] = elapesed_time
-    #record the rest result
+    # match elpased time from the last 3rd line in stringline
+    elapsed_time = re.findall('tests\sin\s([0-9]*\.?[0-9]*)s', stringlines[-3])
 
+    report['elapsed'] = float(elapsed_time[0]) if len(elapsed_time) else 0
 
-    report['total'] = result.testsRun
+    # record the rest result
 
-    report['failure'] = len(result.failures)
+    report['total'] = testresult.testsRun
 
-    report['pass'] = int(report['total']) - int(report['failure'])
+    report['failure'] = failures
+    report['pass'] = passrun
 
-    report['log'] = result
+    report['detail'] = detail
 
     return report
 
 
+def load_test(browser):
+    # pack test suite
 
+    if browser == 'Chrome':
+        suite = unittest.TestLoader().loadTestsFromTestCase(Test_Login)
+    elif browser == 'Safari':
+        suite = unittest.TestLoader().loadTestsFromTestCase(Test_Login_Safari)
+    elif browser == 'Ie':
+        suite = unittest.TestLoader().loadTestsFromTestCase(Test_Login_Ie)
+
+    # output stream collector
+    outputio = io.StringIO()
+
+    # get start time, type is aware datetime (include timezone)
+    starttime = timezone.now()
+
+    result = unittest.TextTestRunner(stream=outputio, verbosity=2).run(suite)
+
+    outputstr = outputio.getvalue()
+    outputio.close()
+    resultdict = handle_result(result, outputstr)
+    resultdict['start'] = starttime
+
+    return resultdict
