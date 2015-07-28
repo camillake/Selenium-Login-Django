@@ -1,8 +1,8 @@
+import logging
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.views.generic.detail import DetailView
 from .models import LogModel
-import logging
 from .test_function import load_test
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ def save_test_to_model(log):
     elapsed = log.get('elapsed', 0)
     total = log.get('total', 0)
     success = log.get('pass', 0)
-    failed = log.get('failure',0)
+    failed = log.get('failure', 0)
     detail = log.get('detail', 'No more data')
     if log:
         LogModel.objects.create(
