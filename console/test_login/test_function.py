@@ -16,6 +16,19 @@ from selenium.common.exceptions import ErrorInResponseException, WebDriverExcept
 
 # you need to download chromdriver and put it under specified directory
 
+try:
+    from .personal import *
+
+except ImportError:
+
+    TEST_ID = settings.TEST_ID
+    TEST_PWD = settings.TEST_PWD
+    FB_TEST_ID = settings.FB_TEST_ID
+    FB_PWD = settings.FB_PWD
+
+
+
+
 logger = logging.getLogger(__name__)
 
 TARGET_URL = 'https://www.kkbox.com/play/'
@@ -24,12 +37,6 @@ DRIVER_DIRS = {'Chrome': settings.WEB_DRIVER_DIRS[0],
                'Ie': settings.WEB_DRIVER_DIRS[1],
                'Safari': settings.WEB_DRIVER_DIRS[2],
                }
-
-
-TEST_ID = settings.TEST_ID
-TEST_PWD = settings.TEST_PWD
-FB_TEST_ID = settings.FB_TEST_ID
-FB_PWD = settings.FB_PWD
 
 
 class Test_Login(unittest.TestCase):
@@ -73,6 +80,7 @@ class Test_Login(unittest.TestCase):
         try:
             driver.implicitly_wait(5)
             close_element = driver.find_element_by_xpath("//div[@class='close ng-scope']/img")
+            close_element.click()
         except (NoSuchElementException, ElementNotVisibleException) as ec:
             logger.exception(ec)
             logger.debug('Pop up window not displayed')
@@ -82,7 +90,6 @@ class Test_Login(unittest.TestCase):
             return
 
         logger.debug('Pop-up window closed')
-        close_element.click()
 
     def check_id(self, uid):
         driver = self.driver
@@ -156,9 +163,19 @@ class Test_Login(unittest.TestCase):
 
         driver.find_element_by_css_selector('button.btn-invite').click()
 
+
+
         # Select a frame by its (zero-based) index.
         # switch window to popup window of FaceBook
-        wnd_num = len(driver.window_handles)
+        # timeout is 5s
+        timeout = 5
+        startstamp = time.time()
+
+        # wait 5s for pop-up wnd
+        while time.time()-startstamp < timeout:
+            wnd_num = len(driver.window_handles)
+            if wnd_num > 1:
+                break
 
         if wnd_num > 1:
             driver.switch_to.window(driver.window_handles[wnd_num-1])
